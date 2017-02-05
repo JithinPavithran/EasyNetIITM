@@ -36,5 +36,3 @@ def approve(duration, username, password):
 				sleep(1)
 			print "Retrying..."
 	print "Exiting..."
-
-approve(1)

@@ -20,9 +20,9 @@ int vaildate(QString password, QString username)
      * Pop error ig textBox is empty.
      *
      * return value:
-     *      1: Credentials succesfuly validated.
+     *      0: Credentials succesfuly validated.
      *      2: Credentials are invalid
-     *      0: Validation failed due to connection problem
+     *      1: Validation failed. Possibly connection problem
      *     -1: Validation failed due to bug in program
      *
      */
@@ -59,29 +59,39 @@ int vaildate(QString password, QString username)
     }
 
     Py_Finalize();
-    return 0;
+    return 1;
 
 }
 
 
 
-int approve()
+int approve(QString password, QString username)
 {
     Py_Initialize();
     PyRun_SimpleString("import sys\n"
                        "import os");
     PyRun_SimpleString("sys.path.append( os.path.dirname(os.getcwd()) +'/EasyNetIITM/')");
 
-    PyObject *pName, *pModule, *pFunc, *pArgs;
-    pName = PyString_FromString("approve");
+    PyObject *pName, *pModule, *pFunc, *pArgs, *pRet;
+    pName = PyString_FromString("NetApprove");
     pModule = PyImport_Import(pName);
     Py_DECREF(pName);
 
-    if(pModule!=NULL){
+    if( pModule!=NULL){
         pFunc = PyObject_GetAttrString(pModule, (char*)"approve");
-        pArgs = PyTuple_New(1);
+        pArgs = PyTuple_New(3);
         PyTuple_SetItem(pArgs, 0, PyInt_FromLong(1));
-        PyObject_CallObject(pFunc, pArgs);
+        PyTuple_SetItem(pArgs, 1, PyString_FromString(username.toStdString().c_str()));
+        PyTuple_SetItem(pArgs, 2, PyString_FromString(password.toStdString().c_str()));
+        pRet = PyObject_CallObject(pFunc, pArgs);
+        if(PyLong_AsLong(pRet)==0){
+            // Successful approval
+            return 0;
+        }
+        else if(PyLong_AsLong(pRet)==1){
+            // TODO: retry
+            return 1;
+        }
     }
     else{
         qDebug()<<"approve Python module not found"<<endl;
@@ -103,10 +113,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 }
 
+
 MainWindow::~MainWindow()
 {
     delete ui;
 }
+
 
 void delay(int n)
 {
@@ -114,6 +126,7 @@ void delay(int n)
     while (QTime::currentTime() < dieTime)
         QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
 }
+
 
 void MainWindow::on_save_b_clicked()
 {
@@ -141,9 +154,14 @@ void MainWindow::on_save_b_clicked()
     }
 }
 
+
 void MainWindow::on_approve_b_clicked()
 {
-    approve();
+    QSettings settings;
+    QString password = settings.value("password").toString();
+    QString username = settings.value("username").toString();
+    QMessageBox::information(this, "Credentials", "Pass:"+password+" User:"+username);
+    approve(password, username);
 }
 
 
