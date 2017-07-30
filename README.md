@@ -11,3 +11,6 @@ Product highlights:
 ### Environment
 
 The project is developed as a Qt Application to ensure the cross platform compatibility. While UI related code are written in C++, the core parts including loggin into Netaccess portal is done using Python, which is triggered from C++.
+
+
+**-- The project is no more supported as it will be rewritten in pure Python soon --**
